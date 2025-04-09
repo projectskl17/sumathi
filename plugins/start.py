@@ -133,18 +133,33 @@ async def not_joined(client: Client, message: Message):
     temp = await message.reply(f"<i><b>Cʜᴇᴄᴋɪɴɢ...</b></i>")
     
     try:
+        all_buttons = []
+
         if not client.REQFSUB:
-            buttons = client.FSUB_BUTTONS[:]
+            raw_buttons = client.FSUB_BUTTONS[:]
 
         else:
             user_id = message.from_user.id
 
-            buttons = client.REQ_FSUB_BUTTONS['normal'][:]
+            raw_buttons = client.REQ_FSUB_BUTTONS['normal'][:]
 
-            buttons.extend([chat_button for chat_id, chat_button in client.REQ_FSUB_BUTTONS['request'].items() if not await kingdb.reqSent_user_exist(chat_id, user_id)])
-                                             
+            raw_buttons.extend([chat_button for chat_id, chat_button in client.REQ_FSUB_BUTTONS['request'].items() if not await kingdb.reqSent_user_exist(chat_id, user_id)])
+        
+        row = []
+
+        for button in raw_buttons:
+            if isinstance(button, list) and len(button) == 1:
+                button = button[0]
+            if len(row) < 2:
+                row.append(button)
+            else:
+                all_buttons.append(row)
+                row = [button]
+        if row:
+            all_buttons.append(row)
+
         try:
-            buttons.append([InlineKeyboardButton(text='♻️ Tʀʏ Aɢᴀɪɴ', url=f"https://t.me/{client.username}?start={message.command[1]}")])
+            all_buttons.append([InlineKeyboardButton(text='♻️ Tʀʏ Aɢᴀɪɴ', url=f"https://t.me/{client.username}?start={message.command[1]}")])
         except IndexError:
             pass
                      
@@ -156,7 +171,7 @@ async def not_joined(client: Client, message: Message):
                 mention=message.from_user.mention,
                 id=message.from_user.id,
             ),
-            reply_markup=InlineKeyboardMarkup(buttons)
+            reply_markup=InlineKeyboardMarkup(all_buttons)
         )
                 
         try: await message.delete()
